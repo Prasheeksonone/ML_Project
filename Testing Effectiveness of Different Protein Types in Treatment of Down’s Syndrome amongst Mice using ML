@@ -1,0 +1,470 @@
+import pandas as pd # here i import all the libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+df=pd.read_csv("C:\\MLbtoP\\amitsethi\\MouseTrain.csv")
+df
+df.shape
+pd.set_option('display.max_columns',None) #To show all column of given dataset
+pd.set_option('display.max_rows',None)
+df.info() #to shows information about given datasets
+df.isnull() # NaN-True shown, and Non-NaN value=False
+df.isnull().sum() #To shows the NaN value in number
+plt.figure(figsize=(25,25))
+sns.heatmap(df.isnull()) #white color indicate missing data,and missing data column
+df.isnull().sum()/df.shape[0]*100 #{df.isnull().sum()-->NaN value in number; df.shape[0]-->total no. of value; *100 value in%}
+                                   # [0=rows, 1=column], so row wise % missing value
+null_var=df.isnull().sum()/df.shape[0]*100
+drop_columns=null_var[null_var >17].keys() #; to show which column having null value more thean 2%
+drop_columns
+df2_drop_clm=df.drop(columns=drop_columns)
+df2_drop_clm
+df2_drop_clm.shape
+sns.heatmap(df2_drop_clm.isnull())
+df3_drop_rows=df2_drop_clm.dropna() #to drop all NaN value from all column
+df3_drop_rows
+df3_drop_rows.shape # to check wheather NaN values deleted or not
+plt.figure(figsize=(25,25))
+sns.heatmap(df3_drop_rows.isnull())
+df3_drop_rows.isnull().sum() # to check perticular value
+df3_drop_rows.isnull().sum().sum() # total NaN value of column
+plt.figure(figsize=(16,9))
+sns.scatterplot(x="DYRK1A_N",y="NR1_N",data=df3_drop_rows)
+sns.lineplot(x="DYRK1A_N",y="NR1_N",data=df3_drop_rows)
+sns.barplot(x="DYRK1A_N",y="NR1_N",data=df3_drop_rows)
+df3_drop_rows.corr()
+plt.figure(figsize=(50,50))
+ax=sns.heatmap(df3_drop_rows.corr(),annot=True,linewidth=3)
+ax.tick_params(size=2,color='w',labelsize=10,labelcolor='w')
+plt.title("heatmap of 'MOUSE-TRAIN-DATA: treatment of Down’s syndrome",fontsize=15)
+plt.show()
+sns.countplot(x='Treatment_Behavior', data=df)
+plt.show()
+sns.pairplot(df3_drop_rows, vars = ['DYRK1A_N', 'ITSN1_N', 'BDNF_N', 'NR2A_N',
+        'NR1_N'])
+#to show only numeric data,for thiswe have to delete the theoritical or categorical data value column and slect only numerical
+df3_drop_rows.select_dtypes(include=['int64','float64']).columns #only integer and float value column
+sns.distplot(df['ITSN1_N']) # to see main data from unclean dataset
+plt.show()
+sns.distplot(df3_drop_rows['ITSN1_N']) #after deleting NaN values clean data value
+df3_num=df2_drop_clm.select_dtypes(include=['int64','float64'])
+df3_num.head()
+df3_num.isnull().sum()
+df4_num_mean=df3_drop_rows.fillna(df3_num.mean())
+df4_num_mean
+# INTERPOLATION
+df=pd.read_csv("C:\\MLbtoP\\amitsethi\\MouseTrain.csv")
+df
+df.dropna(how='all') #if in row there is complete NAN value then only skip the column otherwise print as it
+df.dropna(thresh=1) # min one non-nan value present then only print
+df.fillna(0) #to fill the value in placed of NAN value and replaced by 0
+df.fillna(method='bfill') # b=backfill , value fill from next--->backback, value fill by next value in backspace
+# AXIS Method
+df.fillna(method='ffill',axis=0) # row operation, one row to next row value fill hogi,
+df.fillna(method='ffill',axis=1)#column operation, column1 to column2, left to right value fill hogi
+from sklearn.preprocessing import LabelEncoder
+
+LE=LabelEncoder()
+df['Genotype'] = LE.fit_transform(df['Genotype'])
+df['Treatment_Behavior'] = LE.fit_transform(df['Treatment_Behavior'])
+
+import pandas as pd
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+
+imputer = IterativeImputer()
+imputed_df = imputer.fit_transform(df)
+imputed_df = pd.DataFrame(imputed_df, columns=df.columns)
+imputed_df
+X=imputed_df.drop(['Genotype','Treatment_Behavior'], axis=1)
+Genotype = imputed_df['Genotype']
+Treat_Behav = imputed_df['Treatment_Behavior']
+
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import LinearSVC
+
+param_grid = {'C': [0.1, 1, 10, 100]}
+
+svc = LinearSVC(max_iter=10000)
+
+svc_cv = GridSearchCV(svc, param_grid, cv=5)
+
+svc_cv.fit(X, Genotype)
+
+print("Best hyperparameters: ", svc_cv.best_params_)
+print("Best mean cross-validation score: {:.2f}".format(svc_cv.best_score_))
+## Question 5
+# b. RBF kernel SVM with kernel width and regularization as hyperparameters:
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+
+# define the hyperparameter grid to search over
+param_grid = {'C': [0.1, 1, 10, 100],
+              'gamma': [0.1, 1, 10, 100]}
+
+# create a SVC object with RBF kernel
+svc = SVC(kernel='rbf')
+
+# create a GridSearchCV object with 5-fold cross-validation
+svc_cv = GridSearchCV(svc, param_grid, cv=5)
+
+# fit the GridSearchCV object to the data
+svc_cv.fit(X, Genotype)
+
+# print the best hyperparameters and the corresponding mean cross-validation score
+print("Best hyperparameters: ", svc_cv.best_params_)
+print("Best mean cross-validation score: {:.2f}".format(svc_cv.best_score_))
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+
+# define the hyperparameter grid to search over
+param_grid = {'C': [0.1, 1, 10, 100],
+              'gamma': [0.1, 1, 10, 100]}
+
+# create a SVC object with RBF kernel
+svc = SVC(kernel='rbf')
+
+# create a GridSearchCV object with 5-fold cross-validation
+svc_cv = GridSearchCV(svc, param_grid, cv=5)
+
+# fit the GridSearchCV object to the data
+svc_cv.fit(X, Treat_Behav)
+
+# print the best hyperparameters and the corresponding mean cross-validation score
+print("Best hyperparameters: ", svc_cv.best_params_)
+print("Best mean cross-validation score: {:.2f}".format(svc_cv.best_score_))
+## Question 5
+# c. Neural network with single ReLU hidden layer and Softmax output (hyperparameters: number of neurons, weight decay):
+from sklearn.model_selection import GridSearchCV
+from sklearn.neural_network import MLPClassifier
+
+# define the hyperparameter grid to search over
+param_grid = {'hidden_layer_sizes': [(10,), (50,), (100,)],
+              'alpha': [0.001, 0.01, 0.1]}
+
+# create an MLPClassifier object
+mlp = MLPClassifier(activation='relu', solver='adam', random_state=1, max_iter=5000)
+
+# create a GridSearchCV object with 5-fold cross-validation
+mlp_cv = GridSearchCV(mlp, param_grid, cv=5)
+
+# fit the GridSearchCV object to the data
+mlp_cv.fit(X, Genotype)
+
+# print the best hyperparameters and the corresponding mean cross-validation score
+print("Best hyperparameters: ", mlp_cv.best_params_)
+print("Best mean cross-validation score: {:.2f}".format(mlp_cv.best_score_))
+from sklearn.model_selection import GridSearchCV
+from sklearn.neural_network import MLPClassifier
+
+# define the hyperparameter grid to search over
+param_grid = {'hidden_layer_sizes': [(10,), (50,), (100,)],
+              'alpha': [0.001, 0.01, 0.1]}
+
+# create an MLPClassifier object
+mlp = MLPClassifier(activation='relu', solver='adam', random_state=1, max_iter=5000)
+
+# create a GridSearchCV object with 5-fold cross-validation
+mlp_cv = GridSearchCV(mlp, param_grid, cv=5)
+
+# fit the GridSearchCV object to the data
+mlp_cv.fit(X, Treat_Behav)
+
+# print the best hyperparameters and the corresponding mean cross-validation score
+print("Best hyperparameters: ", mlp_cv.best_params_)
+print("Best mean cross-validation score: {:.2f}".format(mlp_cv.best_score_))
+## Question 5
+#d. Random forest (max tree depth, max number of variables per node):
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RandomizedSearchCV
+
+# Define hyperparameter space
+param_dist = {'max_depth': [3, 5, 10, None],
+              'max_features': ['sqrt', 'log2', None],
+              'n_estimators': [100] }
+
+# Create random forest classifier object
+rf = RandomForestClassifier()
+
+# Create randomized search object
+rf_random = RandomizedSearchCV(estimator = rf,
+                               param_distributions = param_dist,
+                               n_iter = 100,
+                               cv = 5,
+                               verbose = 2,
+                               random_state = 42,
+                               n_jobs = -1)
+
+# Fit randomized search object to the data
+rf_random.fit(X, Genotype)
+
+# Get best parameters and score
+print("Best parameters found: ", rf_random.best_params_)
+print("Best score found: ", rf_random.best_score_)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RandomizedSearchCV
+
+# Define hyperparameter space
+param_dist = {'max_depth': [3, 5, 10, None],
+              'max_features': ['sqrt', 'log2', None],
+              'n_estimators': [100] }
+
+# Create random forest classifier object
+rf = RandomForestClassifier()
+
+# Create randomized search object
+rf_random = RandomizedSearchCV(estimator = rf,
+                               param_distributions = param_dist,
+                               n_iter = 100,
+                               cv = 5,
+                               verbose = 2,
+                               random_state = 42,
+                               n_jobs = -1)
+
+# Fit randomized search object to the data
+rf_random.fit(X, Treat_Behav)
+
+# Get best parameters and score
+print("Best parameters found: ", rf_random.best_params_)
+print("Best score found: ", rf_random.best_score_)
+print("Best score found: ", rf_random.best_score_)
+# Question no.6
+#a. Linear SVM: In Linear SVM, the feature weights indicate the importance of each feature. The magnitude of the weight indicates the strength of importance. We can get feature weights using the coef_ attribute of the trained model.
+svm_lin = LinearSVC(C=100)
+svm_lin.fit(X, Genotype)
+feature_imp = abs(svm_lin.coef_[0])
+
+import matplotlib.pyplot as plt
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp)
+plt.show()
+
+#a. Linear SVM: In Linear SVM, the feature weights indicate the importance of each feature. The magnitude of the weight indicates the strength of importance. We can get feature weights using the coef_ attribute of the trained model.
+svm_lin = LinearSVC(C=100)
+svm_lin.fit(X, Treat_Behav)
+feature_imp = abs(svm_lin.coef_[0])
+
+import matplotlib.pyplot as plt
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp)
+plt.show()
+#b. RBF kernel SVM: In RBF kernel SVM, the feature importance can be obtained by calculating the contribution of each feature in the kernel function. We can use the feature_importances_ attribute of the trained model to get the feature importance.
+from sklearn.inspection import permutation_importance
+svm_rbf = SVC(kernel='rbf', C=100, gamma=0.1)
+svm_rbf.fit(X, Genotype)
+
+feature_imp = permutation_importance(svm_rbf, X, Genotype)
+
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp.importances_mean)
+plt.show()
+#b. RBF kernel SVM: In RBF kernel SVM, the feature importance can be obtained by calculating the contribution of each feature in the kernel function. We can use the feature_importances_ attribute of the trained model to get the feature importance.
+from sklearn.inspection import permutation_importance
+svm_rbf = SVC(kernel='rbf', C=100, gamma=0.1)
+svm_rbf.fit(X, Treat_Behav)
+
+feature_imp = permutation_importance(svm_rbf, X, Treat_Behav)
+
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp.importances_mean)
+plt.show()
+#c. Neural network: In neural network, the feature importance can be obtained by calculating the gradient of the output with respect to the input. We can use the GradientTape function of TensorFlow to get the gradients.
+from sklearn.neural_network import MLPClassifier
+from sklearn.inspection import permutation_importance
+import matplotlib.pyplot as plt
+
+nn = MLPClassifier(hidden_layer_sizes=100, alpha=0.1)
+nn.fit(X, Genotype)
+
+feature_imp = permutation_importance(nn, X, Genotype)
+
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp.importances_mean)
+plt.show()
+
+#c. Neural network: In neural network, the feature importance can be obtained by calculating the gradient of the output with respect to the input. We can use the GradientTape function of TensorFlow to get the gradients.
+from sklearn.neural_network import MLPClassifier
+from sklearn.inspection import permutation_importance
+import matplotlib.pyplot as plt
+
+nn = MLPClassifier(hidden_layer_sizes=100, alpha=0.1)
+nn.fit(X, Treat_Behav)
+
+feature_imp = permutation_importance(nn, X, Treat_Behav)
+
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp.importances_mean)
+plt.show()
+rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
+rf.fit(X, Genotype)
+
+feature_imp = rf.feature_importances_
+
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp)
+plt.show()
+rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
+rf.fit(X, Treat_Behav)
+
+feature_imp = rf.feature_importances_
+
+fig=plt.figure(figsize=(20,20))
+plt.barh(X.columns, feature_imp)
+plt.show()
+# Question no.7
+import numpy as np
+from sklearn.svm import LinearSVC
+from sklearn.feature_selection import RFECV
+
+# Create a linear SVM model
+svm = LinearSVC(C=100)
+
+# Use RFECV to perform feature selection
+rfecv = RFECV(estimator=svm, step=1, cv=5, scoring='accuracy')
+rfecv.fit(X, Genotype)
+
+# Print the optimal number of features
+print("Optimal number of features: %d" % rfecv.n_features_)
+print("Selected features: ", X.columns[rfecv.support_])
+
+rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
+
+
+rfecv = RFECV(estimator=rf, step=1, cv=5, scoring='accuracy')
+rfecv.fit(X, Genotype)
+
+# Print the optimal number of features
+print("Optimal number of features: %d" % rfecv.n_features_)
+print("Selected features: ", X.columns[rfecv.support_])
+rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
+
+
+rfecv = RFECV(estimator=rf, step=1, cv=5, scoring='accuracy')
+rfecv.fit(X, Treat_Behav)
+
+# Print the optimal number of features
+print("Optimal number of features: %d" % rfecv.n_features_)
+print("Selected features: ", X.columns[rfecv.support_])
+# Question no.8
+## Question 8
+import pandas as pd
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+
+from sklearn.preprocessing import LabelEncoder
+
+# Load test data
+test_df = pd.read_csv('https://www.ee.iitb.ac.in/~asethi/Dump/MouseTest.csv')
+
+#Label encode
+le=LabelEncoder()
+test_df['Genotype'] = le.fit_transform(test_df['Genotype'])
+test_df['Treatment_Behavior'] = le.fit_transform(test_df['Treatment_Behavior'])
+
+#impute missing values
+imputer = IterativeImputer(max_iter=10, random_state=0)
+test_imputed_df = imputer.fit_transform(test_df)
+test_imputed_df= pd.DataFrame(test_imputed_df, columns=test_df.columns)
+test_imputed_df
+
+# Extract features and labels from test data
+X_test = test_imputed_df.drop(['Genotype','Treatment_Behavior'], axis=1)
+Genotype_test = test_df['Genotype']
+Treatment_behav_test = test_df['Treatment_Behavior']
+
+svm_lin.fit(X, Genotype)
+svm_rbf.fit(X, Genotype)
+nn.fit(X, Genotype)
+rf.fit(X, Genotype)
+
+# Make predictions on test data
+Genotype_pred_svm_linear = svm_lin.predict(X_test)
+Genotype_pred_svm_rbf = svm_rbf.predict(X_test)
+Genotype_pred_nn = nn.predict(X_test)
+Genotype_pred_rf = rf.predict(X_test)
+
+# Evaluate accuracy on test data
+acc_svm_linear = accuracy_score(Genotype_test, Genotype_pred_svm_linear)
+acc_svm_rbf = accuracy_score(Genotype_test, Genotype_pred_svm_rbf)
+acc_nn = accuracy_score(Genotype_test, Genotype_pred_nn)
+acc_rf = accuracy_score(Genotype_test, Genotype_pred_rf)
+
+print('Accuracy of SVM with linear kernel:', acc_svm_linear)
+print('Accuracy of SVM with RBF kernel:', acc_svm_rbf)
+print('Accuracy of neural network:', acc_nn)
+print('Accuracy of random forest:', acc_rf)
+import pandas as pd
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+
+from sklearn.preprocessing import LabelEncoder
+
+# Load test data
+test_df = pd.read_csv('https://www.ee.iitb.ac.in/~asethi/Dump/MouseTest.csv')
+
+#Label encode
+le=LabelEncoder()
+test_df['Genotype'] = le.fit_transform(test_df['Genotype'])
+test_df['Treatment_Behavior'] = le.fit_transform(test_df['Treatment_Behavior'])
+
+#impute missing values
+imputer = IterativeImputer(max_iter=10, random_state=0)
+test_imputed_df = imputer.fit_transform(test_df)
+test_imputed_df= pd.DataFrame(test_imputed_df, columns=test_df.columns)
+test_imputed_df
+
+# Extract features and labels from test data
+X_test = test_imputed_df.drop(['Genotype','Treatment_Behavior'], axis=1)
+Genotype_test = test_df['Genotype']
+Treat_Behav_test = test_df['Treatment_Behavior']
+
+svm_lin.fit(X, Treat_Behav)
+svm_rbf.fit(X, Treat_Behav)
+nn.fit(X, Treat_Behav)
+rf.fit(X, Treat_Behav)
+
+# Make predictions on test data
+Treat_Behav_pred_svm_linear = svm_lin.predict(X_test)
+Treat_Behav_pred_svm_rbf = svm_rbf.predict(X_test)
+Treat_Behav_pred_nn = nn.predict(X_test)
+Treat_Behav_pred_rf = rf.predict(X_test)
+
+# Evaluate accuracy on test data
+acc_svm_linear = accuracy_score(Treat_Behav_test, Treat_Behav_pred_svm_linear)
+acc_svm_rbf = accuracy_score(Treat_Behav_test,Treat_Behav_pred_svm_rbf)
+acc_nn = accuracy_score(Treat_Behav_test, Treat_Behav_pred_nn)
+acc_rf = accuracy_score(Treat_Behav_test, Treat_Behav_pred_rf)
+
+print('Accuracy of SVM with linear kernel:', acc_svm_linear)
+print('Accuracy of SVM with RBF kernel:', acc_svm_rbf)
+print('Accuracy of neural network:', acc_nn)
+print('Accuracy of random forest:', acc_rf)
+# Question no.9
+pip install torchvision
+from __future__ import print_function, division
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.optim import lr_scheduler
+import torch.backends.cudnn as cudnn
+import numpy as np
+import torchvision
+from torchvision import datasets, models, transforms
+import matplotlib.pyplot as plt
+import time
+import os
+import copy
+
+cudnn.benchmark = True
+plt.ion()
